@@ -161,4 +161,9 @@ extern const Comparator* BytewiseComparator();
 // ordering.
 extern const Comparator* ReverseBytewiseComparator();
 
+// hinko
+extern const Comparator* BytewiseComparatorWithU64Ts();
+extern const Comparator* BytewiseComparatorWithU64Ts2();
+// hinko
+
 }  // namespace ROCKSDB_NAMESPACE

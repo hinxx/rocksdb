@@ -1,0 +1,82 @@
+Using built-in key + timestamp feature of the rocksdb.
+
+In theory it would be what we need, but in practice things are not as expected!?
+
+
+                options.comparator = rocksdb::BytewiseComparatorWithU64Ts();
+
+Stock comparator sorts the timestamps in descending order: newer timestamp is first when iterating
+
+-------- GET ----------------------
+ts 1123
+single: key1 = value1122, ts 1122           << CORRECT
+-------- GET ----------------------
+ts 1121
+single: key1 = value11, ts 1111             << CORRECT
+-------- ITER ----------------------
+ts 0
+-------- ITER ----------------------
+ts 9999
+iter all: key1 = value1144, ts 1144         << got the newest value
+iter all: key2 = value22, ts 2222
+iter all: key3 = value33, ts 3333
+iter all: key5 = value55, ts 5555
+iter all: key7 = value77, ts 7777
+-------- ITER ----------------------
+ts0 0
+ts 9999
+iter all: key1 = value1144, ts 1144         << DO NOT LIKE THIS ORDERING
+iter all: key1 = value1122, ts 1122         << DO NOT LIKE THIS ORDERING
+iter all: key1 = value11, ts 1111           << DO NOT LIKE THIS ORDERING
+iter all: key2 = value22, ts 2222
+iter all: key3 = value33, ts 3333
+iter all: key5 = value55, ts 5555
+iter all: key7 = value77, ts 7777
+-------- ITER ----------------------
+key key1
+ts 9999
+iter all: key1 = value1144, ts 1144
+iter all: key2 = value22, ts 2222
+
+                options.comparator = rocksdb::BytewiseComparatorWithU64Ts2();
+
+Same comparator code as BytewiseComparatorWithU64Ts(), but without sign inversion in Compare()
+to sort the timestamp in ascending order: older timestamp is first when iterating
+
+-------- PUT ----------------------
+new: key1 = value11, ts 1111
+new: key1 = value1144, ts 1144
+new: key1 = value1122, ts 1122
+new: key2 = value22, ts 2222
+new: key3 = value33, ts 3333
+new: key5 = value55, ts 5555
+new: key7 = value77, ts 7777
+-------- GET ----------------------
+ts 1123
+single: key1 = value1144, ts 1144               << NO GOOD
+-------- GET ----------------------
+ts 1121
+single: key1 = value1122, ts 1122               << NO GOOD
+-------- ITER ----------------------
+ts 0
+-------- ITER ----------------------
+ts 9999
+iter all: key1 = value11, ts 1111               << got the oldest value ?? NO GOOD
+iter all: key2 = value22, ts 2222
+iter all: key3 = value33, ts 3333
+iter all: key5 = value55, ts 5555
+iter all: key7 = value77, ts 7777
+-------- ITER ----------------------
+ts0 0
+ts 9999
+iter all: key1 = value11, ts 1111               << GOOD
+iter all: key1 = value1122, ts 1122
+iter all: key1 = value1144, ts 1144
+iter all: key2 = value22, ts 2222
+iter all: key3 = value33, ts 3333
+iter all: key5 = value55, ts 5555
+iter all: key7 = value77, ts 7777
+-------- ITER ----------------------
+key key1
+ts 9999
+iter all: key2 = value22, ts 2222               << WHERE IS THE key1?

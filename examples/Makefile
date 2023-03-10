@@ -17,10 +17,9 @@ CFLAGS += -Wstrict-prototypes
 .PHONY: clean librocksdb
 
 # all: simple_example column_families_example compact_files_example c_simple_example optimistic_transaction_example transaction_example compaction_filter_example options_file_example rocksdb_backup_restore_example
-all: simple_example2
+all: simple_example_ts
 
-# simple_example2: librocksdb simple_example2.cc
-simple_example2: ../librocksdb.so simple_example2.cc
+simple_example_ts: ../librocksdb.so simple_example_ts.cc
 	$(CXX) $(CXXFLAGS) $@.cc -o$@ -L ../ -lrocksdb -I../include -O2 -std=c++17 $(PLATFORM_LDFLAGS) $(PLATFORM_CXXFLAGS) $(EXEC_LDFLAGS)
 
 simple_example: ../librocksdb.a simple_example.cc
